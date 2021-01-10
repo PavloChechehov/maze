@@ -17,19 +17,21 @@ public class Main {
         DIRECTIONS.add(new Point(-1, 0));
     }
 
+    private static List<List<Point>> map;
+
     public static void main(String[] args) {
         int[] arr =
                 //x |^|
                 //y ->
-                        {0, 0, 0, 0, 0,
+                {0, 0, 0, 0, 0,
                         0, 0, 4, 0, 0,
                         0, 4, 4, 4, 4,
                         0, 4, 0, 4, 0,
                         0, 0, 0, 4, 0};
-        List<List<Point>> map = createMap(arr, 5);
+        map = createMap(arr, 5);
 
         Main main = new Main();
-        List<List<Point>> possibleDirections = main.getAllPossibleWays(map, new Point(3, 3), new Point(4, 3), 5);
+        List<List<Point>> possibleDirections = main.getAllPossiblePaths(new Point(3, 3), new Point(4, 3), 5);
 
         for (List<Point> possibleDirection : possibleDirections) {
             System.out.println(possibleDirection);
@@ -49,56 +51,65 @@ public class Main {
         return map;
     }
 
-    private List<List<Point>> getAllPossibleWays(List<List<Point>> map,
-                                                 Point startPoint,
-                                                 Point previous,
-                                                 int dices) {
+    private List<List<Point>> getAllPossiblePaths(Point startPoint,
+                                                  Point previous,
+                                                  int dices) {
         List<List<Point>> possibleDirections = new CopyOnWriteArrayList<>();
         List<Point> startDirection = new ArrayList<>();
         startDirection.add(previous);
         startDirection.add(startPoint);
         possibleDirections.add(startDirection);
         for (int i = 0; i < dices; i++) {
-            getNewDirections(map, possibleDirections);
+            getNewDirections(possibleDirections);
         }
         return possibleDirections;
     }
 
-    private void getNewDirections(List<List<Point>> map, List<List<Point>> directions) {
-        for (List<Point> way : directions) {
-            Point current = way.get(way.size() - 1);
-            Point previous = way.get(way.size() - 2);
-            List<Point> nextDirections = getNextDirection(map, current, previous);
-            for (Point direction : nextDirections) {
-                Point point = goToNextCell(map, way.get(way.size() - 1), direction);
-                List<Point> newWay = new ArrayList<>(way);
-                newWay.add(point);
-                directions.remove(way);
-                directions.add(newWay);
+
+    private void getNewDirections(List<List<Point>> paths) {
+        for (List<Point> path : paths) {
+            Point current = path.get(path.size() - 1);
+            Point previous = path.get(path.size() - 2);
+            for (Point direction : DIRECTIONS) {
+
+                if (isReversePath(current, previous, direction)) {
+                    continue;
+                }
+
+                if (!isPossiblePath(current, direction)) {
+                    continue;
+                }
+
+                Point point = getNextPoint(current, direction);
+                List<Point> newPath = new ArrayList<>(path);
+                newPath.add(point);
+                paths.remove(path);
+                paths.add(newPath);
             }
         }
     }
 
-    private List<Point> getNextDirection(List<List<Point>> map, Point current, Point previous) {
+    private Point getNextPoint(Point current, Point direction) {
+        int yDirection = current.getY() + direction.getY();
+        int xDirection = current.getX() + direction.getX();
+        return map.get(xDirection).get(yDirection);
+    }
+
+    private boolean isReversePath(Point current, Point previous, Point direction) {
         int x = previous.getX() - current.getX();
         int y = previous.getY() - current.getY();
-        Point direction = new Point(x, y);
-
-        return DIRECTIONS.stream()
-                .filter(d -> !d.equals(direction)) // todo: delete reverse direction
-                .filter(d -> isPossibleWay(map, current, d))
-                .collect(Collectors.toList());
+        return direction.getX() == x && direction.getY() == y;
     }
 
-    private boolean isPossibleWay(List<List<Point>> map, Point current, Point direction) {
-        Point nextCell = goToNextCell(map, current, direction);
-        return nextCell != null && nextCell.getValue() != 0;
-    }
-
-    private Point goToNextCell(List<List<Point>> map, Point current, Point direction) {
+    private boolean isPossiblePath(Point current, Point direction) {
         int xDirection = current.getX() + direction.getX();
         int yDirection = current.getY() + direction.getY();
-        if (xDirection < 0 || yDirection < 0 || xDirection >= map.size() || yDirection >= map.size()) return null;
-        return map.get(xDirection).get(yDirection);
+        if (xDirection < 0
+                || yDirection < 0
+                || xDirection >= map.size()
+                || yDirection >= map.size())
+            return false;
+
+        return map.get(xDirection).get(yDirection).getValue() != 0;
     }
 }

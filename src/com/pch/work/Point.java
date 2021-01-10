@@ -73,10 +73,8 @@ public class Point {
 
     @Override
     public String toString() {
-        return "Point{" +
-                "x=" + x +
+        return "{x=" + x +
                 ", y=" + y +
-                ", value=" + value +
-                '}';
+                ", value=" + value +'}';
     }
 }
